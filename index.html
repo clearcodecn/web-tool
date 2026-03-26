@@ -1,0 +1,1110 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>在线工具箱</title>
+    <script src="https://cdn.jsdelivr.net/npm/blueimp-md5@2.19.0/js/md5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f0f2f5; min-height: 100vh; }
+        .layout { display: flex; min-height: 100vh; }
+        .sidebar { width: 220px; background: #001529; color: #fff; padding: 0; position: fixed; height: 100vh; overflow-y: auto; }
+        .sidebar::-webkit-scrollbar { width: 4px; }
+        .sidebar::-webkit-scrollbar-thumb { background: #333; border-radius: 2px; }
+        .logo { padding: 20px; font-size: 18px; font-weight: bold; border-bottom: 1px solid #1f1f1f; text-align: center; }
+        .nav-group { padding: 8px 0; border-bottom: 1px solid #1f1f1f; }
+        .nav-group-title { padding: 8px 20px; font-size: 12px; color: #888; text-transform: uppercase; }
+        .nav-item { display: block; padding: 10px 20px; color: #aaa; text-decoration: none; cursor: pointer; transition: all 0.2s; font-size: 14px; }
+        .nav-item:hover { background: #1890ff; color: #fff; }
+        .nav-item.active { background: #1890ff; color: #fff; }
+        .main { flex: 1; margin-left: 220px; padding: 24px; }
+        .panel { display: none; background: #fff; border-radius: 8px; padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .panel.active { display: block; }
+        .panel-title { font-size: 20px; color: #333; margin-bottom: 8px; }
+        .panel-desc { color: #888; font-size: 14px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; margin-bottom: 6px; color: #555; font-size: 14px; }
+        input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 10px 12px; border: 1px solid #d9d9d9; border-radius: 6px; font-size: 14px; transition: border-color 0.2s; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: #1890ff; box-shadow: 0 0 0 2px rgba(24,144,255,0.1); }
+        textarea { resize: vertical; min-height: 120px; font-family: 'Consolas', 'Monaco', monospace; }
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s; margin-right: 8px; margin-bottom: 8px; }
+        .btn-primary { background: #1890ff; color: #fff; }
+        .btn-primary:hover { background: #40a9ff; }
+        .btn-success { background: #52c41a; color: #fff; }
+        .btn-success:hover { background: #73d13d; }
+        .btn-warning { background: #faad14; color: #fff; }
+        .btn-warning:hover { background: #ffc53d; }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-secondary:hover { background: #d9d9d9; }
+        .btn-danger { background: #ff4d4f; color: #fff; }
+        .btn-danger:hover { background: #ff7875; }
+        .result-box { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px; margin-top: 12px; font-family: 'Consolas', monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; max-height: 400px; overflow-y: auto; }
+        .result-box.error { color: #ff4d4f; background: #fff2f0; border-color: #ffccc7; }
+        .result-box.success { color: #52c41a; background: #f6ffed; border-color: #b7eb8f; }
+        .current-time { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
+        .current-time .ts { font-size: 32px; font-weight: bold; }
+        .current-time .dt { margin-top: 8px; opacity: 0.9; }
+        .inline-form { display: flex; gap: 12px; align-items: flex-end; }
+        .inline-form > div { flex: 1; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+        .stat-box { background: #f0f5ff; border: 1px solid #adc6ff; border-radius: 6px; padding: 12px; text-align: center; }
+        .stat-box .num { font-size: 24px; font-weight: bold; color: #1890ff; }
+        .stat-box .label { font-size: 12px; color: #666; margin-top: 4px; }
+        .color-preview { width: 60px; height: 60px; border-radius: 6px; border: 2px solid #ddd; display: inline-block; vertical-align: middle; }
+        .http-status { display: inline-block; padding: 6px 12px; margin: 4px; border-radius: 4px; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .http-status:hover { transform: scale(1.05); }
+        .http-status.http-2xx { background: #f6ffed; color: #52c41a; border: 1px solid #b7eb8f; }
+        .http-status.http-3xx { background: #e6f7ff; color: #1890ff; border: 1px solid #91d5ff; }
+        .http-status.http-4xx { background: #fff7e6; color: #fa8c16; border: 1px solid #ffd591; }
+        .http-status.http-5xx { background: #fff2f0; color: #ff4d4f; border: 1px solid #ffccc7; }
+        .port-item { display: inline-block; padding: 8px 12px; margin: 4px; background: #fafafa; border: 1px solid #e8e8e8; border-radius: 4px; font-size: 13px; cursor: pointer; }
+        .port-item:hover { background: #e6f7ff; border-color: #91d5ff; }
+        .qrcode-container { text-align: center; padding: 20px; }
+        .qrcode-container canvas { border: 1px solid #e8e8e8; border-radius: 4px; }
+        .diff-container { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .diff-box { background: #fafafa; border: 1px solid #e8e8e8; border-radius: 6px; padding: 12px; font-family: monospace; font-size: 13px; max-height: 400px; overflow-y: auto; white-space: pre-wrap; }
+        .diff-added { background: #f6ffed; color: #52c41a; }
+        .diff-removed { background: #fff2f0; color: #ff4d4f; }
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; }
+            .sidebar .logo, .sidebar .nav-group-title { display: none; }
+            .nav-item { padding: 12px; text-align: center; font-size: 12px; }
+            .main { margin-left: 60px; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .diff-container { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="logo">工具箱</div>
+            <div class="nav-group">
+                <div class="nav-group-title">编码/解码</div>
+                <a class="nav-item active" data-panel="timestamp">时间戳转换</a>
+                <a class="nav-item" data-panel="json">JSON格式化</a>
+                <a class="nav-item" data-panel="base64">Base64编解码</a>
+                <a class="nav-item" data-panel="unicode">Unicode转换</a>
+                <a class="nav-item" data-panel="url">URL编解码</a>
+                <a class="nav-item" data-panel="htmlentity">HTML实体</a>
+                <a class="nav-item" data-panel="color">颜色转换</a>
+                <a class="nav-item" data-panel="imgbase64">图片Base64</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">加密/哈希</div>
+                <a class="nav-item" data-panel="md5">MD5生成</a>
+                <a class="nav-item" data-panel="sha">SHA哈希</a>
+                <a class="nav-item" data-panel="password">密码生成</a>
+                <a class="nav-item" data-panel="jwt">JWT解析</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">格式化</div>
+                <a class="nav-item" data-panel="xml">XML格式化</a>
+                <a class="nav-item" data-panel="sql">SQL格式化</a>
+                <a class="nav-item" data-panel="yaml">YAML转换</a>
+                <a class="nav-item" data-panel="compress">代码压缩</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">文本处理</div>
+                <a class="nav-item" data-panel="textstat">字数统计</a>
+                <a class="nav-item" data-panel="case">大小写转换</a>
+                <a class="nav-item" data-panel="diff">文本对比</a>
+                <a class="nav-item" data-panel="regex">正则测试</a>
+                <a class="nav-item" data-panel="qrcode">二维码生成</a>
+            </div>
+            <div class="nav-group">
+                <div class="nav-group-title">开发工具</div>
+                <a class="nav-item" data-panel="uuid">UUID生成</a>
+                <a class="nav-item" data-panel="cron">Cron表达式</a>
+                <a class="nav-item" data-panel="httpcode">HTTP状态码</a>
+                <a class="nav-item" data-panel="port">端口查询</a>
+            </div>
+        </div>
+        <div class="main">
+            <!-- 时间戳转换 -->
+            <div class="panel active" id="timestamp-panel">
+                <div class="panel-title">时间戳转换</div>
+                <div class="panel-desc">Unix时间戳与日期时间的相互转换</div>
+                <div class="current-time">
+                    <div class="ts" id="current-ts">-</div>
+                    <div class="dt" id="current-dt">-</div>
+                </div>
+                <div class="form-group">
+                    <label>时间戳（秒/毫秒）</label>
+                    <div class="inline-form">
+                        <div><input type="text" id="ts-input" placeholder="如：1709875200"></div>
+                        <button class="btn btn-primary" onclick="timestampToDate()">转换</button>
+                    </div>
+                </div>
+                <div class="result-box" id="ts-result">结果</div>
+                <div class="form-group" style="margin-top:20px;">
+                    <label>日期时间</label>
+                    <div class="inline-form">
+                        <div><input type="text" id="date-input" placeholder="如：2024-03-08 12:00:00"></div>
+                        <button class="btn btn-primary" onclick="dateToTimestamp()">转换</button>
+                    </div>
+                </div>
+                <div class="result-box" id="date-result">结果</div>
+            </div>
+
+            <!-- JSON格式化 -->
+            <div class="panel" id="json-panel">
+                <div class="panel-title">JSON格式化</div>
+                <div class="panel-desc">JSON美化、压缩、转义</div>
+                <div class="form-group">
+                    <label>输入JSON</label>
+                    <textarea id="json-input" placeholder='{"name": "test", "value": 123}'></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="formatJSON()">格式化</button>
+                <button class="btn btn-secondary" onclick="compressJSON()">压缩</button>
+                <button class="btn btn-secondary" onclick="escapeJSON()">转义</button>
+                <button class="btn btn-secondary" onclick="unescapeJSON()">去转义</button>
+                <button class="btn btn-secondary" onclick="copyJSONResult()">复制结果</button>
+                <div class="result-box" id="json-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- Base64编解码 -->
+            <div class="panel" id="base64-panel">
+                <div class="panel-title">Base64编解码</div>
+                <div class="panel-desc">Base64编码与解码</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="base64-input" placeholder="输入要编码/解码的内容"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="encodeBase64()">Base64编码</button>
+                <button class="btn btn-secondary" onclick="decodeBase64()">Base64解码</button>
+                <div class="result-box" id="base64-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- Unicode转换 -->
+            <div class="panel" id="unicode-panel">
+                <div class="panel-title">Unicode转换</div>
+                <div class="panel-desc">中文与Unicode编码互转</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="unicode-input" placeholder="输入中文或Unicode编码"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="encodeUnicode()">中文转Unicode</button>
+                <button class="btn btn-secondary" onclick="decodeUnicode()">Unicode转中文</button>
+                <div class="result-box" id="unicode-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- URL编解码 -->
+            <div class="panel" id="url-panel">
+                <div class="panel-title">URL编解码</div>
+                <div class="panel-desc">URL编码与解码</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="url-input" placeholder="输入URL或已编码的内容"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="encodeURL()">URL编码</button>
+                <button class="btn btn-secondary" onclick="encodeURLComponent()">编码(含特殊字符)</button>
+                <button class="btn btn-secondary" onclick="decodeURL()">URL解码</button>
+                <div class="result-box" id="url-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- HTML实体 -->
+            <div class="panel" id="htmlentity-panel">
+                <div class="panel-title">HTML实体编解码</div>
+                <div class="panel-desc">HTML实体与文本互转</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="htmlentity-input" placeholder="输入文本或HTML实体"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="encodeHTMLEntity()">文本转HTML实体</button>
+                <button class="btn btn-secondary" onclick="decodeHTMLEntity()">HTML实体转文本</button>
+                <div class="result-box" id="htmlentity-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 颜色转换 -->
+            <div class="panel" id="color-panel">
+                <div class="panel-title">颜色转换</div>
+                <div class="panel-desc">Hex、RGB、HSL颜色格式互转</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>Hex颜色</label>
+                        <input type="text" id="color-hex" placeholder="#ff0000">
+                    </div>
+                    <div class="form-group">
+                        <label>RGB颜色</label>
+                        <input type="text" id="color-rgb" placeholder="rgb(255, 0, 0)">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>HSL颜色</label>
+                    <input type="text" id="color-hsl" placeholder="hsl(0, 100%, 50%)">
+                </div>
+                <button class="btn btn-primary" onclick="convertFromHex()">从Hex转换</button>
+                <button class="btn btn-secondary" onclick="convertFromRGB()">从RGB转换</button>
+                <button class="btn btn-secondary" onclick="convertFromHSL()">从HSL转换</button>
+                <div style="margin-top:16px;">
+                    <label>颜色预览</label>
+                    <div id="color-preview" class="color-preview" style="background:#ff0000;"></div>
+                </div>
+            </div>
+
+            <!-- 图片Base64 -->
+            <div class="panel" id="imgbase64-panel">
+                <div class="panel-title">图片Base64转换</div>
+                <div class="panel-desc">图片与Base64字符串互转</div>
+                <div class="form-group">
+                    <label>选择图片</label>
+                    <input type="file" id="img-file" accept="image/*" onchange="imageToBase64()">
+                </div>
+                <div class="form-group">
+                    <label>Base64编码</label>
+                    <textarea id="img-base64" placeholder="Base64编码将显示在这里"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="base64ToImage()">Base64转图片</button>
+                <button class="btn btn-secondary" onclick="copyImgBase64()">复制Base64</button>
+                <div id="img-preview" style="margin-top:16px;"></div>
+            </div>
+
+            <!-- MD5生成 -->
+            <div class="panel" id="md5-panel">
+                <div class="panel-title">MD5生成</div>
+                <div class="panel-desc">计算字符串的MD5哈希值</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="md5-input" placeholder="输入要计算MD5的内容"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="generateMD5()">生成MD5(小写)</button>
+                <button class="btn btn-secondary" onclick="generateMD5Upper()">生成MD5(大写)</button>
+                <div class="result-box" id="md5-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- SHA哈希 -->
+            <div class="panel" id="sha-panel">
+                <div class="panel-title">SHA哈希生成</div>
+                <div class="panel-desc">计算SHA-1、SHA-256、SHA-512哈希值</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="sha-input" placeholder="输入要计算哈希的内容"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="generateSHA('SHA-1')">SHA-1</button>
+                <button class="btn btn-primary" onclick="generateSHA('SHA-256')">SHA-256</button>
+                <button class="btn btn-primary" onclick="generateSHA('SHA-512')">SHA-512</button>
+                <button class="btn btn-secondary" onclick="generateAllSHA()">生成全部</button>
+                <div class="result-box" id="sha-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 密码生成 -->
+            <div class="panel" id="password-panel">
+                <div class="panel-title">随机密码生成</div>
+                <div class="panel-desc">生成安全的随机密码</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>密码长度</label>
+                        <input type="number" id="pwd-length" value="16" min="4" max="128">
+                    </div>
+                    <div class="form-group">
+                        <label>生成数量</label>
+                        <input type="number" id="pwd-count" value="5" min="1" max="50">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>字符类型</label>
+                    <div style="display:flex;gap:16px;flex-wrap:wrap;">
+                        <label><input type="checkbox" id="pwd-upper" checked> 大写字母 A-Z</label>
+                        <label><input type="checkbox" id="pwd-lower" checked> 小写字母 a-z</label>
+                        <label><input type="checkbox" id="pwd-number" checked> 数字 0-9</label>
+                        <label><input type="checkbox" id="pwd-special" checked> 特殊字符 !@#$%</label>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="generatePasswords()">生成密码</button>
+                <button class="btn btn-secondary" onclick="copyAllPasswords()">复制全部</button>
+                <div class="result-box" id="pwd-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- JWT解析 -->
+            <div class="panel" id="jwt-panel">
+                <div class="panel-title">JWT解析</div>
+                <div class="panel-desc">解析JWT Token内容</div>
+                <div class="form-group">
+                    <label>JWT Token</label>
+                    <textarea id="jwt-input" placeholder="粘贴JWT Token"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="parseJWT()">解析JWT</button>
+                <div class="result-box" id="jwt-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- XML格式化 -->
+            <div class="panel" id="xml-panel">
+                <div class="panel-title">XML格式化</div>
+                <div class="panel-desc">XML美化与压缩</div>
+                <div class="form-group">
+                    <label>输入XML</label>
+                    <textarea id="xml-input" placeholder="<root><item>test</item></root>"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="formatXML()">格式化</button>
+                <button class="btn btn-secondary" onclick="compressXML()">压缩</button>
+                <div class="result-box" id="xml-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- SQL格式化 -->
+            <div class="panel" id="sql-panel">
+                <div class="panel-title">SQL格式化</div>
+                <div class="panel-desc">SQL语句美化</div>
+                <div class="form-group">
+                    <label>输入SQL</label>
+                    <textarea id="sql-input" placeholder="SELECT * FROM users WHERE id = 1"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="formatSQL()">格式化</button>
+                <button class="btn btn-secondary" onclick="compressSQL()">压缩</button>
+                <div class="result-box" id="sql-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- YAML转换 -->
+            <div class="panel" id="yaml-panel">
+                <div class="panel-title">YAML转换</div>
+                <div class="panel-desc">YAML与JSON互转</div>
+                <div class="form-group">
+                    <label>输入内容（YAML或JSON）</label>
+                    <textarea id="yaml-input" placeholder="输入YAML或JSON"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="yamlToJson()">YAML → JSON</button>
+                <button class="btn btn-secondary" onclick="jsonToYaml()">JSON → YAML</button>
+                <div class="result-box" id="yaml-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 代码压缩 -->
+            <div class="panel" id="compress-panel">
+                <div class="panel-title">代码压缩</div>
+                <div class="panel-desc">CSS/JavaScript代码压缩</div>
+                <div class="form-group">
+                    <label>输入代码</label>
+                    <textarea id="compress-input" placeholder="粘贴CSS或JavaScript代码"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="compressCode()">压缩代码</button>
+                <button class="btn btn-secondary" onclick="clearCompress()">清空</button>
+                <div class="grid-3" style="margin-top:16px;">
+                    <div class="stat-box"><div class="num" id="orig-size">0</div><div class="label">原始字节</div></div>
+                    <div class="stat-box"><div class="num" id="comp-size">0</div><div class="label">压缩后字节</div></div>
+                    <div class="stat-box"><div class="num" id="saved-size">0%</div><div class="label">节省</div></div>
+                </div>
+                <div class="result-box" id="compress-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 字数统计 -->
+            <div class="panel" id="textstat-panel">
+                <div class="panel-title">字数统计</div>
+                <div class="panel-desc">统计字符数、单词数、行数等</div>
+                <div class="form-group">
+                    <label>输入文本</label>
+                    <textarea id="textstat-input" placeholder="输入要统计的文本" oninput="countText()"></textarea>
+                </div>
+                <div class="grid-3">
+                    <div class="stat-box"><div class="num" id="stat-chars">0</div><div class="label">字符数</div></div>
+                    <div class="stat-box"><div class="num" id="stat-chars-nospace">0</div><div class="label">字符(不含空格)</div></div>
+                    <div class="stat-box"><div class="num" id="stat-chinese">0</div><div class="label">中文字数</div></div>
+                    <div class="stat-box"><div class="num" id="stat-words">0</div><div class="label">英文单词</div></div>
+                    <div class="stat-box"><div class="num" id="stat-lines">0</div><div class="label">行数</div></div>
+                    <div class="stat-box"><div class="num" id="stat-bytes">0</div><div class="label">字节数(UTF-8)</div></div>
+                </div>
+            </div>
+
+            <!-- 大小写转换 -->
+            <div class="panel" id="case-panel">
+                <div class="panel-title">大小写转换</div>
+                <div class="panel-desc">英文大小写转换</div>
+                <div class="form-group">
+                    <label>输入文本</label>
+                    <textarea id="case-input" placeholder="输入文本"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="toUpper()">全大写</button>
+                <button class="btn btn-secondary" onclick="toLower()">全小写</button>
+                <button class="btn btn-secondary" onclick="toTitle()">首字母大写</button>
+                <button class="btn btn-secondary" onclick="toSentence()">句首大写</button>
+                <button class="btn btn-secondary" onclick="toToggle()">大小写互换</button>
+                <div class="result-box" id="case-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 文本对比 -->
+            <div class="panel" id="diff-panel">
+                <div class="panel-title">文本对比</div>
+                <div class="panel-desc">对比两段文本的差异</div>
+                <div class="diff-container">
+                    <div>
+                        <label>原始文本</label>
+                        <textarea id="diff-input1" placeholder="原始文本"></textarea>
+                    </div>
+                    <div>
+                        <label>对比文本</label>
+                        <textarea id="diff-input2" placeholder="对比文本"></textarea>
+                    </div>
+                </div>
+                <button class="btn btn-primary" style="margin-top:16px;" onclick="compareText()">对比</button>
+                <div class="result-box" id="diff-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 正则测试 -->
+            <div class="panel" id="regex-panel">
+                <div class="panel-title">正则表达式测试</div>
+                <div class="panel-desc">在线测试正则表达式</div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>正则表达式</label>
+                        <input type="text" id="regex-pattern" placeholder="/\d+/g">
+                    </div>
+                    <div class="form-group">
+                        <label>修饰符</label>
+                        <div style="display:flex;gap:16px;padding-top:8px;">
+                            <label><input type="checkbox" id="regex-g" checked> g(全局)</label>
+                            <label><input type="checkbox" id="regex-i"> i(忽略大小写)</label>
+                            <label><input type="checkbox" id="regex-m"> m(多行)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>测试文本</label>
+                    <textarea id="regex-input" placeholder="输入要匹配的文本"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="testRegex()">测试匹配</button>
+                <div class="result-box" id="regex-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- 二维码生成 -->
+            <div class="panel" id="qrcode-panel">
+                <div class="panel-title">二维码生成</div>
+                <div class="panel-desc">将文本生成二维码</div>
+                <div class="form-group">
+                    <label>输入内容</label>
+                    <textarea id="qrcode-input" placeholder="输入要生成二维码的内容"></textarea>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label>尺寸</label>
+                        <select id="qrcode-size">
+                            <option value="128">128 x 128</option>
+                            <option value="256" selected>256 x 256</option>
+                            <option value="512">512 x 512</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="generateQRCode()">生成二维码</button>
+                <button class="btn btn-secondary" onclick="downloadQRCode()">下载二维码</button>
+                <div class="qrcode-container" id="qrcode-result"></div>
+            </div>
+
+            <!-- UUID生成 -->
+            <div class="panel" id="uuid-panel">
+                <div class="panel-title">UUID生成</div>
+                <div class="panel-desc">生成UUID/GUID</div>
+                <div class="form-group">
+                    <label>生成数量</label>
+                    <input type="number" id="uuid-count" value="10" min="1" max="100">
+                </div>
+                <button class="btn btn-primary" onclick="generateUUIDs()">生成UUID</button>
+                <button class="btn btn-secondary" onclick="copyUUIDs()">复制全部</button>
+                <div class="result-box" id="uuid-result" style="margin-top:16px;">结果</div>
+            </div>
+
+            <!-- Cron表达式 -->
+            <div class="panel" id="cron-panel">
+                <div class="panel-title">Cron表达式生成</div>
+                <div class="panel-desc">生成和解析Cron表达式</div>
+                <div class="form-group">
+                    <label>Cron表达式</label>
+                    <input type="text" id="cron-input" placeholder="0 0 12 * * ?">
+                </div>
+                <button class="btn btn-primary" onclick="parseCron()">解析表达式</button>
+                <div class="result-box" id="cron-result" style="margin-top:16px;">结果</div>
+                <div class="form-group" style="margin-top:20px;">
+                    <label>快速生成</label>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                        <button class="btn btn-secondary" onclick="setCron('0 0 * * * ?')">每分钟</button>
+                        <button class="btn btn-secondary" onclick="setCron('0 0 0 * * ?')">每天0点</button>
+                        <button class="btn btn-secondary" onclick="setCron('0 0 12 * * ?')">每天12点</button>
+                        <button class="btn btn-secondary" onclick="setCron('0 0 0 ? * MON')">每周一0点</button>
+                        <button class="btn btn-secondary" onclick="setCron('0 0 0 1 * ?')">每月1号0点</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HTTP状态码 -->
+            <div class="panel" id="httpcode-panel">
+                <div class="panel-title">HTTP状态码查询</div>
+                <div class="panel-desc">常用HTTP状态码说明</div>
+                <div class="form-group">
+                    <label>搜索状态码</label>
+                    <input type="text" id="http-search" placeholder="输入状态码或关键词搜索" oninput="searchHTTP()">
+                </div>
+                <div id="http-list">
+                    <h4 style="margin:16px 0 8px;color:#52c41a;">2xx 成功</h4>
+                    <div><span class="http-status http-2xx" title="请求成功">200 OK</span></div>
+                    <div><span class="http-status http-2xx" title="已创建新资源">201 Created</span></div>
+                    <div><span class="http-status http-2xx" title="已接受请求但未完成">202 Accepted</span></div>
+                    <div><span class="http-status http-2xx" title="无内容返回">204 No Content</span></div>
+                    
+                    <h4 style="margin:16px 0 8px;color:#1890ff;">3xx 重定向</h4>
+                    <div><span class="http-status http-3xx" title="永久重定向">301 Moved Permanently</span></div>
+                    <div><span class="http-status http-3xx" title="临时重定向">302 Found</span></div>
+                    <div><span class="http-status http-3xx" title="资源未修改，使用缓存">304 Not Modified</span></div>
+                    
+                    <h4 style="margin:16px 0 8px;color:#fa8c16;">4xx 客户端错误</h4>
+                    <div><span class="http-status http-4xx" title="请求语法错误">400 Bad Request</span></div>
+                    <div><span class="http-status http-4xx" title="未授权访问">401 Unauthorized</span></div>
+                    <div><span class="http-status http-4xx" title="禁止访问">403 Forbidden</span></div>
+                    <div><span class="http-status http-4xx" title="资源不存在">404 Not Found</span></div>
+                    <div><span class="http-status http-4xx" title="请求方法不允许">405 Method Not Allowed</span></div>
+                    <div><span class="http-status http-4xx" title="请求超时">408 Request Timeout</span></div>
+                    <div><span class="http-status http-4xx" title="请求实体过大">413 Payload Too Large</span></div>
+                    <div><span class="http-status http-4xx" title="请求URI过长">414 URI Too Long</span></div>
+                    <div><span class="http-status http-4xx" title="不支持的媒体类型">415 Unsupported Media Type</span></div>
+                    <div><span class="http-status http-4xx" title="请求过于频繁">429 Too Many Requests</span></div>
+                    
+                    <h4 style="margin:16px 0 8px;color:#ff4d4f;">5xx 服务端错误</h4>
+                    <div><span class="http-status http-5xx" title="服务器内部错误">500 Internal Server Error</span></div>
+                    <div><span class="http-status http-5xx" title="服务器未实现该方法">501 Not Implemented</span></div>
+                    <div><span class="http-status http-5xx" title="网关错误">502 Bad Gateway</span></div>
+                    <div><span class="http-status http-5xx" title="服务不可用">503 Service Unavailable</span></div>
+                    <div><span class="http-status http-5xx" title="网关超时">504 Gateway Timeout</span></div>
+                </div>
+            </div>
+
+            <!-- 端口查询 -->
+            <div class="panel" id="port-panel">
+                <div class="panel-title">常用端口查询</div>
+                <div class="panel-desc">常用网络端口说明</div>
+                <div class="form-group">
+                    <label>搜索端口</label>
+                    <input type="text" id="port-search" placeholder="输入端口号或服务名称" oninput="searchPort()">
+                </div>
+                <div id="port-list">
+                    <div class="port-item" title="文件传输协议">20 FTP(数据)</div>
+                    <div class="port-item" title="文件传输协议">21 FTP(控制)</div>
+                    <div class="port-item" title="安全Shell">22 SSH</div>
+                    <div class="port-item" title="Telnet远程登录">23 Telnet</div>
+                    <div class="port-item" title="简单邮件传输协议">25 SMTP</div>
+                    <div class="port-item" title="域名服务">53 DNS</div>
+                    <div class="port-item" title="超文本传输协议">80 HTTP</div>
+                    <div class="port-item" title="邮局协议v3">110 POP3</div>
+                    <div class="port-item" title="网络时间协议">123 NTP</div>
+                    <div class="port-item" title="简单网络管理协议">161 SNMP</div>
+                    <div class="port-item" title="安全HTTP">443 HTTPS</div>
+                    <div class="port-item" title="安全Shell文件传输">465 SMTPS</div>
+                    <div class="port-item" title="简单邮件传输协议(安全)">587 SMTP(TLS)</div>
+                    <div class="port-item" title="安全文件传输协议">990 FTPS</div>
+                    <div class="port-item" title="安全邮局协议">995 POP3S</div>
+                    <div class="port-item" title="安全IMAP">993 IMAPS</div>
+                    <div class="port-item" title="MySQL数据库">3306 MySQL</div>
+                    <div class="port-item" title="Redis缓存">6379 Redis</div>
+                    <div class="port-item" title="MongoDB数据库">27017 MongoDB</div>
+                    <div class="port-item" title="PostgreSQL数据库">5432 PostgreSQL</div>
+                    <div class="port-item" title="SQL Server数据库">1433 SQL Server</div>
+                    <div class="port-item" title="Oracle数据库">1521 Oracle</div>
+                    <div class="port-item" title="Elasticsearch搜索">9200 Elasticsearch</div>
+                    <div class="port-item" title="RabbitMQ消息队列">5672 RabbitMQ</div>
+                    <div class="port-item" title="Zookeeper协调">2181 Zookeeper</div>
+                    <div class="port-item" title="Docker容器">2375 Docker</div>
+                    <div class="port-item" title="VNC远程桌面">5900 VNC</div>
+                    <div class="port-item" title="Windows远程桌面">3389 RDP</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab切换
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function() {
+                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+                this.classList.add('active');
+                document.getElementById(this.dataset.panel + '-panel').classList.add('active');
+            });
+        });
+
+        // 复制功能
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => alert('已复制到剪贴板'));
+        }
+
+        // ============ 时间戳转换 ============
+        function updateCurrentTime() {
+            const now = Date.now();
+            const ts = Math.floor(now / 1000);
+            document.getElementById('current-ts').textContent = ts;
+            document.getElementById('current-dt').textContent = formatDate(new Date());
+        }
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000);
+
+        function formatDate(date) {
+            const pad = n => n.toString().padStart(2, '0');
+            return `${date.getFullYear()}-${pad(date.getMonth()+1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+        }
+
+        function timestampToDate() {
+            const input = document.getElementById('ts-input').value.trim();
+            if (!input) return;
+            let ts = parseInt(input);
+            if (isNaN(ts)) { document.getElementById('ts-result').textContent = '无效的时间戳'; return; }
+            if (ts.toString().length > 10) ts = Math.floor(ts / 1000);
+            const date = new Date(ts * 1000);
+            document.getElementById('ts-result').innerHTML = `秒级时间戳: ${ts}\n毫秒级时间戳: ${ts}000\n本地时间: ${formatDate(date)}\nUTC时间: ${date.toUTCString()}`;
+        }
+
+        function dateToTimestamp() {
+            const input = document.getElementById('date-input').value.trim();
+            if (!input) return;
+            const date = new Date(input.replace(/-/g, '/'));
+            if (isNaN(date.getTime())) { document.getElementById('date-result').textContent = '无效的日期格式'; return; }
+            const ts = Math.floor(date.getTime() / 1000);
+            document.getElementById('date-result').innerHTML = `秒级时间戳: ${ts}\n毫秒级时间戳: ${date.getTime()}`;
+        }
+
+        // ============ JSON格式化 ============
+        function formatJSON() {
+            const input = document.getElementById('json-input').value.trim();
+            try {
+                const obj = JSON.parse(input);
+                document.getElementById('json-result').textContent = JSON.stringify(obj, null, 2);
+            } catch (e) { document.getElementById('json-result').textContent = 'JSON格式错误: ' + e.message; }
+        }
+        function compressJSON() {
+            const input = document.getElementById('json-input').value.trim();
+            try {
+                const obj = JSON.parse(input);
+                document.getElementById('json-result').textContent = JSON.stringify(obj);
+            } catch (e) { document.getElementById('json-result').textContent = 'JSON格式错误: ' + e.message; }
+        }
+        function escapeJSON() {
+            const input = document.getElementById('json-input').value.trim();
+            document.getElementById('json-result').textContent = JSON.stringify(input);
+        }
+        function unescapeJSON() {
+            const input = document.getElementById('json-input').value.trim();
+            try { document.getElementById('json-result').textContent = JSON.parse(input); }
+            catch (e) { document.getElementById('json-result').textContent = '解析错误: ' + e.message; }
+        }
+        function copyJSONResult() { copyText(document.getElementById('json-result').textContent); }
+
+        // ============ Base64编解码 ============
+        function encodeBase64() {
+            const input = document.getElementById('base64-input').value;
+            try { document.getElementById('base64-result').textContent = btoa(unescape(encodeURIComponent(input))); }
+            catch (e) { document.getElementById('base64-result').textContent = '编码错误: ' + e.message; }
+        }
+        function decodeBase64() {
+            const input = document.getElementById('base64-input').value.trim();
+            try { document.getElementById('base64-result').textContent = decodeURIComponent(escape(atob(input))); }
+            catch (e) { document.getElementById('base64-result').textContent = '解码错误: 无效的Base64字符串'; }
+        }
+
+        // ============ Unicode转换 ============
+        function encodeUnicode() {
+            const input = document.getElementById('unicode-input').value;
+            let result = '';
+            for (let i = 0; i < input.length; i++) {
+                const code = input.charCodeAt(i);
+                result += code > 127 ? '\\u' + code.toString(16).padStart(4, '0') : input[i];
+            }
+            document.getElementById('unicode-result').textContent = result;
+        }
+        function decodeUnicode() {
+            const input = document.getElementById('unicode-input').value;
+            const result = input.replace(/\\u([0-9a-fA-F]{4})/g, (m, c) => String.fromCharCode(parseInt(c, 16)));
+            document.getElementById('unicode-result').textContent = result;
+        }
+
+        // ============ URL编解码 ============
+        function encodeURL() {
+            document.getElementById('url-result').textContent = encodeURI(document.getElementById('url-input').value);
+        }
+        function encodeURLComponent() {
+            document.getElementById('url-result').textContent = encodeURIComponent(document.getElementById('url-input').value);
+        }
+        function decodeURL() {
+            try { document.getElementById('url-result').textContent = decodeURIComponent(document.getElementById('url-input').value); }
+            catch (e) { document.getElementById('url-result').textContent = '解码错误: ' + e.message; }
+        }
+
+        // ============ HTML实体编解码 ============
+        function encodeHTMLEntity() {
+            const input = document.getElementById('htmlentity-input').value;
+            const result = input.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+            document.getElementById('htmlentity-result').textContent = result;
+        }
+        function decodeHTMLEntity() {
+            const input = document.getElementById('htmlentity-input').value;
+            const textarea = document.createElement('textarea');
+            textarea.innerHTML = input;
+            document.getElementById('htmlentity-result').textContent = textarea.value;
+        }
+
+        // ============ 颜色转换 ============
+        function convertFromHex() {
+            const hex = document.getElementById('color-hex').value.trim().replace('#', '');
+            if (!/^[0-9a-fA-F]{6}$/.test(hex) && !/^[0-9a-fA-F]{3}$/.test(hex)) { alert('无效的Hex颜色'); return; }
+            let fullHex = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
+            const r = parseInt(fullHex.substr(0, 2), 16);
+            const g = parseInt(fullHex.substr(2, 2), 16);
+            const b = parseInt(fullHex.substr(4, 2), 16);
+            document.getElementById('color-rgb').value = `rgb(${r}, ${g}, ${b})`;
+            const hsl = rgbToHsl(r, g, b);
+            document.getElementById('color-hsl').value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+            document.getElementById('color-preview').style.background = `#${fullHex}`;
+        }
+        function convertFromRGB() {
+            const match = document.getElementById('color-rgb').value.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+            if (!match) { alert('无效的RGB颜色格式，应为 rgb(r, g, b)'); return; }
+            const r = parseInt(match[1]), g = parseInt(match[2]), b = parseInt(match[3]);
+            document.getElementById('color-hex').value = '#' + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+            const hsl = rgbToHsl(r, g, b);
+            document.getElementById('color-hsl').value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+            document.getElementById('color-preview').style.background = `rgb(${r}, ${g}, ${b})`;
+        }
+        function convertFromHSL() {
+            const match = document.getElementById('color-hsl').value.match(/hsl\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*\)/);
+            if (!match) { alert('无效的HSL颜色格式，应为 hsl(h, s%, l%)'); return; }
+            const h = parseInt(match[1]), s = parseInt(match[2]) / 100, l = parseInt(match[3]) / 100;
+            const rgb = hslToRgb(h, s, l);
+            document.getElementById('color-rgb').value = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            document.getElementById('color-hex').value = '#' + [rgb.r, rgb.g, rgb.b].map(x => x.toString(16).padStart(2, '0')).join('');
+            document.getElementById('color-preview').style.background = `hsl(${h}, ${s * 100}%, ${l * 100}%)`;
+        }
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+            if (max === min) { h = s = 0; }
+            else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                    case g: h = ((b - r) / d + 2) / 6; break;
+                    case b: h = ((r - g) / d + 4) / 6; break;
+                }
+            }
+            return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+        }
+        function hslToRgb(h, s, l) {
+            let r, g, b;
+            h /= 360;
+            if (s === 0) { r = g = b = l; }
+            else {
+                const hue2rgb = (p, q, t) => {
+                    if (t < 0) t += 1;
+                    if (t > 1) t -= 1;
+                    if (t < 1/6) return p + (q - p) * 6 * t;
+                    if (t < 1/2) return q;
+                    if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+                    return p;
+                };
+                const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+                const p = 2 * l - q;
+                r = hue2rgb(p, q, h + 1/3);
+                g = hue2rgb(p, q, h);
+                b = hue2rgb(p, q, h - 1/3);
+            }
+            return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+        }
+
+        // ============ 图片Base64 ============
+        function imageToBase64() {
+            const file = document.getElementById('img-file').files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('img-base64').value = e.target.result;
+                document.getElementById('img-preview').innerHTML = `<img src="${e.target.result}" style="max-width:300px;margin-top:10px;border-radius:4px;">`;
+            };
+            reader.readAsDataURL(file);
+        }
+        function base64ToImage() {
+            const base64 = document.getElementById('img-base64').value.trim();
+            if (!base64) return;
+            document.getElementById('img-preview').innerHTML = `<img src="${base64}" style="max-width:300px;margin-top:10px;border-radius:4px;">`;
+        }
+        function copyImgBase64() { copyText(document.getElementById('img-base64').value); }
+
+        // ============ MD5生成 ============
+        function generateMD5() { document.getElementById('md5-result').textContent = md5(document.getElementById('md5-input').value); }
+        function generateMD5Upper() { document.getElementById('md5-result').textContent = md5(document.getElementById('md5-input').value).toUpperCase(); }
+
+        // ============ SHA哈希 ============
+        async function generateSHA(algorithm) {
+            const input = document.getElementById('sha-input').value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            const hashBuffer = await crypto.subtle.digest(algorithm, data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            document.getElementById('sha-result').textContent = `${algorithm}: ${hashHex}`;
+        }
+        async function generateAllSHA() {
+            const input = document.getElementById('sha-input').value;
+            const encoder = new TextEncoder();
+            const data = encoder.encode(input);
+            let result = '';
+            for (const alg of ['SHA-1', 'SHA-256', 'SHA-512']) {
+                const hashBuffer = await crypto.subtle.digest(alg, data);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                result += `${alg}:\n${hashHex}\n\n`;
+            }
+            document.getElementById('sha-result').textContent = result;
+        }
+
+        // ============ 密码生成 ============
+        function generatePasswords() {
+            const length = parseInt(document.getElementById('pwd-length').value) || 16;
+            const count = parseInt(document.getElementById('pwd-count').value) || 5;
+            const useUpper = document.getElementById('pwd-upper').checked;
+            const useLower = document.getElementById('pwd-lower').checked;
+            const useNumber = document.getElementById('pwd-number').checked;
+            const useSpecial = document.getElementById('pwd-special').checked;
+            let chars = '';
+            if (useUpper) chars += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            if (useLower) chars += 'abcdefghijklmnopqrstuvwxyz';
+            if (useNumber) chars += '0123456789';
+            if (useSpecial) chars += '!@#$%^&*()_+-=[]{}|;:,.<>?';
+            if (!chars) { alert('请至少选择一种字符类型'); return; }
+            let result = '';
+            for (let i = 0; i < count; i++) {
+                let pwd = '';
+                for (let j = 0; j < length; j++) pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+                result += pwd + '\n';
+            }
+            document.getElementById('pwd-result').textContent = result.trim();
+        }
+        function copyAllPasswords() { copyText(document.getElementById('pwd-result').textContent); }
+
+        // ============ JWT解析 ============
+        function parseJWT() {
+            const token = document.getElementById('jwt-input').value.trim();
+            const parts = token.split('.');
+            if (parts.length !== 3) { document.getElementById('jwt-result').textContent = '无效的JWT Token'; return; }
+            try {
+                const header = JSON.parse(atob(parts[0]));
+                const payload = JSON.parse(atob(parts[1]));
+                let result = '=== Header ===\n' + JSON.stringify(header, null, 2) + '\n\n=== Payload ===\n' + JSON.stringify(payload, null, 2);
+                if (payload.exp) {
+                    const expDate = new Date(payload.exp * 1000);
+                    result += '\n\n=== 过期时间 ===\n' + formatDate(expDate);
+                }
+                if (payload.iat) {
+                    const iatDate = new Date(payload.iat * 1000);
+                    result += '\n\n=== 签发时间 ===\n' + formatDate(iatDate);
+                }
+                document.getElementById('jwt-result').textContent = result;
+            } catch (e) { document.getElementById('jwt-result').textContent = '解析错误: ' + e.message; }
+        }
+
+        // ============ XML格式化 ============
+        function formatXML() {
+            const input = document.getElementById('xml-input').value.trim();
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(input, 'text/xml');
+                const error = doc.querySelector('parsererror');
+                if (error) { document.getElementById('xml-result').textContent = 'XML格式错误'; return; }
+                const serializer = new XMLSerializer();
+                const xmlStr = serializer.serializeToString(doc);
+                let formatted = '', indent = '', tab = '  ';
+                xmlStr.split(/>\s*</).forEach(node => {
+                    if (node.match(/^\/\w/)) indent = indent.substring(tab.length);
+                    formatted += indent + '<' + node + '>\n';
+                    if (node.match(/^<?\w[^>]*[^\/]$/) && !node.startsWith('?')) indent += tab;
+                });
+                document.getElementById('xml-result').textContent = formatted.substring(1, formatted.length - 2);
+            } catch (e) { document.getElementById('xml-result').textContent = '错误: ' + e.message; }
+        }
+        function compressXML() {
+            const input = document.getElementById('xml-input').value.trim();
+            document.getElementById('xml-result').textContent = input.replace(/>\s+</g, '><').replace(/\s+/g, ' ').trim();
+        }
+
+        // ============ SQL格式化 ============
+        function formatSQL() {
+            const input = document.getElementById('sql-input').value.trim();
+            const keywords = ['SELECT', 'FROM', 'WHERE', 'AND', 'OR', 'ORDER BY', 'GROUP BY', 'HAVING', 'LIMIT', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN', 'ON', 'AS', 'INSERT INTO', 'VALUES', 'UPDATE', 'SET', 'DELETE FROM', 'CREATE TABLE', 'ALTER TABLE', 'DROP TABLE', 'INDEX', 'PRIMARY KEY', 'FOREIGN KEY', 'REFERENCES'];
+            let result = input;
+            keywords.forEach(kw => { result = result.replace(new RegExp('\\b' + kw + '\\b', 'gi'), '\n' + kw); });
+            result = result.replace(/^\n/, '').replace(/\n\s*\n/g, '\n');
+            document.getElementById('sql-result').textContent = result;
+        }
+        function compressSQL() {
+            document.getElementById('sql-result').textContent = document.getElementById('sql-input').value.trim().replace(/\s+/g, ' ');
+        }
+
+        // ============ YAML转换 ============
+        function yamlToJson() {
+            const input = document.getElementById('yaml-input').value.trim();
+            try {
+                const obj = jsyaml.load(input);
+                document.getElementById('yaml-result').textContent = JSON.stringify(obj, null, 2);
+            } catch (e) { document.getElementById('yaml-result').textContent = 'YAML解析错误: ' + e.message; }
+        }
+        function jsonToYaml() {
+            const input = document.getElementById('yaml-input').value.trim();
+            try {
+                const obj = JSON.parse(input);
+                document.getElementById('yaml-result').textContent = jsyaml.dump(obj, { indent: 2 });
+            } catch (e) { document.getElementById('yaml-result').textContent = 'JSON解析错误: ' + e.message; }
+        }
+
+        // ============ 代码压缩 ============
+        function compressCode() {
+            const input = document.getElementById('compress-input').value;
+            const origSize = new Blob([input]).size;
+            const compressed = input
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\/\/.*/g, '')
+                .replace(/\s+/g, ' ')
+                .replace(/\s*([{};:,=+\-*\/<>!&|])\s*/g, '$1')
+                .replace(/;\}/g, '}')
+                .trim();
+            const compSize = new Blob([compressed]).size;
+            const saved = Math.round((1 - compSize / origSize) * 100) || 0;
+            document.getElementById('orig-size').textContent = origSize;
+            document.getElementById('comp-size').textContent = compSize;
+            document.getElementById('saved-size').textContent = saved + '%';
+            document.getElementById('compress-result').textContent = compressed;
+        }
+        function clearCompress() {
+            document.getElementById('compress-input').value = '';
+            document.getElementById('compress-result').textContent = '结果';
+            document.getElementById('orig-size').textContent = '0';
+            document.getElementById('comp-size').textContent = '0';
+            document.getElementById('saved-size').textContent = '0%';
+        }
+
+        // ============ 字数统计 ============
+        function countText() {
+            const text = document.getElementById('textstat-input').value;
+            document.getElementById('stat-chars').textContent = text.length;
+            document.getElementById('stat-chars-nospace').textContent = text.replace(/\s/g, '').length;
+            document.getElementById('stat-chinese').textContent = (text.match(/[\u4e00-\u9fa5]/g) || []).length;
+            document.getElementById('stat-words').textContent = (text.match(/[a-zA-Z]+/g) || []).length;
+            document.getElementById('stat-lines').textContent = text ? text.split('\n').length : 0;
+            document.getElementById('stat-bytes').textContent = new Blob([text]).size;
+        }
+
+        // ============ 大小写转换 ============
+        function toUpper() { document.getElementById('case-result').textContent = document.getElementById('case-input').value.toUpperCase(); }
+        function toLower() { document.getElementById('case-result').textContent = document.getElementById('case-input').value.toLowerCase(); }
+        function toTitle() { document.getElementById('case-result').textContent = document.getElementById('case-input').value.replace(/\b\w/g, c => c.toUpperCase()); }
+        function toSentence() { document.getElementById('case-result').textContent = document.getElementById('case-input').value.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase()); }
+        function toToggle() { document.getElementById('case-result').textContent = document.getElementById('case-input').value.split('').map(c => c === c.toUpperCase() ? c.toLowerCase() : c.toUpperCase()).join(''); }
+
+        // ============ 文本对比 ============
+        function compareText() {
+            const text1 = document.getElementById('diff-input1').value;
+            const text2 = document.getElementById('diff-input2').value;
+            const lines1 = text1.split('\n');
+            const lines2 = text2.split('\n');
+            let result = '';
+            const maxLen = Math.max(lines1.length, lines2.length);
+            for (let i = 0; i < maxLen; i++) {
+                const l1 = lines1[i] || '';
+                const l2 = lines2[i] || '';
+                if (l1 === l2) {
+                    result += `  ${i + 1}: ${l1}\n`;
+                } else {
+                    if (l1) result += `- ${i + 1}: ${l1}\n`;
+                    if (l2) result += `+ ${i + 1}: ${l2}\n`;
+                }
+            }
+            document.getElementById('diff-result').textContent = result || '文本完全相同';
+        }
+
+        // ============ 正则测试 ============
+        function testRegex() {
+            const pattern = document.getElementById('regex-pattern').value;
+            const text = document.getElementById('regex-input').value;
+            if (!pattern) { document.getElementById('regex-result').textContent = '请输入正则表达式'; return; }
+            try {
+                let flags = '';
+                if (document.getElementById('regex-g').checked) flags += 'g';
+                if (document.getElementById('regex-i').checked) flags += 'i';
+                if (document.getElementById('regex-m').checked) flags += 'm';
+                const regex = new RegExp(pattern.replace(/^\/|\/$/g, ''), flags);
+                const matches = text.match(regex);
+                if (matches) {
+                    document.getElementById('regex-result').textContent = `匹配到 ${matches.length} 个结果:\n${matches.join('\n')}`;
+                } else {
+                    document.getElementById('regex-result').textContent = '没有匹配到结果';
+                }
+            } catch (e) { document.getElementById('regex-result').textContent = '正则表达式错误: ' + e.message; }
+        }
+
+        // ============ 二维码生成 ============
+        function generateQRCode() {
+            const text = document.getElementById('qrcode-input').value;
+            const size = parseInt(document.getElementById('qrcode-size').value);
+            if (!text) { alert('请输入要生成二维码的内容'); return; }
+            const container = document.getElementById('qrcode-result');
+            container.innerHTML = '';
+            QRCode.toCanvas(text, { width: size }, (err, canvas) => {
+                if (err) { container.textContent = '生成失败: ' + err; return; }
+                container.appendChild(canvas);
+            });
+        }
+        function downloadQRCode() {
+            const canvas = document.querySelector('#qrcode-result canvas');
+            if (!canvas) { alert('请先生成二维码'); return; }
+            const link = document.createElement('a');
+            link.download = 'qrcode.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // ============ UUID生成 ============
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+        function generateUUIDs() {
+            const count = parseInt(document.getElementById('uuid-count').value) || 10;
+            const uuids = Array.from({ length: count }, () => generateUUID());
+            document.getElementById('uuid-result').textContent = uuids.join('\n');
+        }
+        function copyUUIDs() { copyText(document.getElementById('uuid-result').textContent); }
+
+        // ============ Cron表达式 ============
+        function parseCron() {
+            const expr = document.getElementById('cron-input').value.trim();
+            const parts = expr.split(/\s+/);
+            if (parts.length < 5 || parts.length > 6) {
+                document.getElementById('cron-result').textContent = '无效的Cron表达式，需要5-6个字段';
+                return;
+            }
+            const fields = ['秒', '分', '时', '日', '月', '周'];
+            let result = '字段解析:\n';
+            parts.forEach((p, i) => { result += `${fields[i] || '年'}: ${p}\n`; });
+            result += '\n常用示例:\n* * * * * ?  每秒执行\n0 * * * * ?  每分钟执行\n0 0 * * * ?  每小时执行\n0 0 0 * * ?  每天0点执行\n0 0 12 * * ? 每天12点执行\n0 0 0 ? * MON 每周一0点执行\n0 0 0 1 * ?  每月1号0点执行';
+            document.getElementById('cron-result').textContent = result;
+        }
+        function setCron(expr) {
+            document.getElementById('cron-input').value = expr;
+            parseCron();
+        }
+
+        // ============ HTTP状态码搜索 ============
+        function searchHTTP() {
+            const keyword = document.getElementById('http-search').value.toLowerCase();
+            document.querySelectorAll('#http-list .http-status').forEach(el => {
+                el.parentElement.style.display = el.textContent.toLowerCase().includes(keyword) || el.title.toLowerCase().includes(keyword) ? '' : 'none';
+            });
+        }
+
+        // ============ 端口搜索 ============
+        function searchPort() {
+            const keyword = document.getElementById('port-search').value.toLowerCase();
+            document.querySelectorAll('#port-list .port-item').forEach(el => {
+                el.style.display = el.textContent.toLowerCase().includes(keyword) || el.title.toLowerCase().includes(keyword) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>
